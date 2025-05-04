@@ -80,6 +80,14 @@ export const getUserLocation = (): Promise<{latitude: number, longitude: number,
       return;
     }
     
+    // High accuracy options with longer timeout and less caching
+    const options = {
+      enableHighAccuracy: true,  // Request the best possible results
+      timeout: 15000,            // Increased timeout for better results (15 seconds)
+      maximumAge: 0              // Don't use cached position data
+    };
+    
+    // Try to get position with better error handling
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -89,10 +97,25 @@ export const getUserLocation = (): Promise<{latitude: number, longitude: number,
         });
       },
       (error) => {
-        console.error('Error getting location:', error);
-        reject(error);
+        // Better error handling with more informative messages
+        let errorMessage = 'Unknown error occurred while retrieving location.';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied by user.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        
+        console.error('Error getting location:', errorMessage);
+        reject(new Error(errorMessage));
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      options
     );
   });
 };
