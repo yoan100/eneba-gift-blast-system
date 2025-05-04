@@ -11,6 +11,11 @@ interface UserSystemInfo {
   timeZone: string;
   referrer: string;
   userAgent: string;
+  location?: {
+    latitude: number | null;
+    longitude: number | null;
+    accuracy: number | null;
+  };
 }
 
 export const getIpAddress = async (): Promise<string> => {
@@ -59,6 +64,35 @@ export const getUserSystemInfo = (): UserSystemInfo => {
     screenSize: `${window.screen.width}x${window.screen.height}`,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown',
     referrer: document.referrer || 'Direct',
-    userAgent
+    userAgent,
+    location: {
+      latitude: null,
+      longitude: null,
+      accuracy: null
+    }
   };
+};
+
+export const getUserLocation = (): Promise<{latitude: number, longitude: number, accuracy: number}> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser.'));
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        reject(error);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
 };

