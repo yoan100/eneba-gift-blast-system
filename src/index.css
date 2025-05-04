@@ -89,16 +89,67 @@
 .bg-custom-purple {
   background-color: rgba(70, 24, 172, 255);
   background-color: #4618ac;
+  background-image: linear-gradient(135deg, #4618ac 0%, #5928e5 100%);
 }
 
 .bg-custom-purple-light {
   background-color: #5B2FBD;
+  background-image: linear-gradient(135deg, #5B2FBD 0%, #6B3FCD 100%);
 }
 
 .bg-custom-yellow {
   background-color: #ffd41c;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .text-custom-blue {
   color: #3498db;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
+
+/* Add some animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+/* Add shine effect for the card */
+.shine-effect::before {
+  content: '';
+  position: absolute;
+  top: -110%;
+  left: -210%;
+  width: 200%;
+  height: 200%;
+  opacity: 0;
+  transform: rotate(30deg);
+  background: rgba(255, 255, 255, 0.13);
+  background: linear-gradient(
+    to right, 
+    rgba(255, 255, 255, 0.13) 0%,
+    rgba(255, 255, 255, 0.13) 77%,
+    rgba(255, 255, 255, 0.5) 92%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+}
+
+.shine-effect:hover::before {
+  opacity: 1;
+  top: -30%;
+  left: -30%;
+  transition-property: left, top, opacity;
+  transition-duration: 0.7s, 0.7s, 0.15s;
+  transition-timing-function: ease;
+}
+
