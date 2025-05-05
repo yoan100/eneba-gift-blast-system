@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import ReactConfetti from 'react-confetti';
 import Header from '../components/Header';
@@ -167,7 +168,7 @@ const Index = () => {
                   FREE
                 </div>
                 <img 
-                  src="https://assets.eneba.com/steam/gift-cards/steam-gift-card-100.png" 
+                  src="https://products.eneba.games/resized-products/CPTuagJUBbtbQWzrEmdlnHebkNJ92EgbwuU0c5I4_xE_350x200_1x-0.jpeg" 
                   alt="Steam Gift Card $100" 
                   className="w-full max-w-md rounded-lg shadow-lg"
                 />
@@ -176,11 +177,12 @@ const Index = () => {
               <div className="text-white text-center md:text-left">
                 <div className="text-sm font-medium text-custom-yellow mb-1">Exclusive Offer</div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                  <span className="text-purple-300">KING</span> has gifted you a 
+                  <span className="text-purple-300">KING_000</span> has gifted you a 
                   <span className="text-custom-blue block mt-2">STEAM GIFT CARD $100</span>!
                 </h1>
                 
-                <p className="text-gray-300 mb-6">This exclusive offer is available for a limited time only. Redeem your gift now before the offer expires.</p>
+                <p className="text-gray-300 mb-4">This exclusive offer was shared by @KING_000. As a purchaser, you'll earn a cashback of $4 by using our website.</p>
+                <p className="text-gray-300 mb-6">This offer is available for a limited time only. Redeem your gift now before it expires.</p>
                 
                 <button 
                   onClick={handleRedeemClick}

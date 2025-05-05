@@ -18,7 +18,7 @@ const Header = () => {
         <a href="https://www.eneba.com/giveaways" className="text-white hover:text-custom-yellow hidden md:block">Giveaways</a>
         <a href="https://www.eneba.com/store" className="text-white hover:text-custom-yellow hidden md:block">Store</a>
         <div className="text-white">
-          Need help? Click <a href="https://www.eneba.com/support" target="_blank" rel="noopener noreferrer" className="underline hover:text-custom-yellow">here</a>.
+          Need help? Click <a href="https://www.eneba.com/support" target="_blank" rel="noopener noreferrer" className="underline hover:text-custom-yellow">here</a>
         </div>
       </div>
     </header>

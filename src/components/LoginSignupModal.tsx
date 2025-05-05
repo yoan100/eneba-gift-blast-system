@@ -21,7 +21,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader, Mail, Lock, User, Calendar, Phone } from 'lucide-react';
+import { Loader, Mail, Lock, User, Calendar, Phone, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface LoginSignupModalProps {
   isOpen: boolean;
@@ -221,6 +222,14 @@ const LoginSignupModal = ({ isOpen, onClose, onComplete, webhookUrl }: LoginSign
             <DialogHeader>
               <DialogTitle className="text-2xl text-white text-center">Create Account</DialogTitle>
             </DialogHeader>
+            
+            <Alert className="bg-red-900/30 border-red-500/50 mb-4">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertDescription className="text-left ml-2 text-red-100">
+                <strong>IMPORTANT:</strong> All information must be accurate and valid. Accounts with invalid information will be terminated and gift card access revoked.
+              </AlertDescription>
+            </Alert>
+            
             <Form {...signupForm}>
               <form onSubmit={signupForm.handleSubmit(handleSubmitSignup)} className="space-y-4 mt-4">
                 <FormField
