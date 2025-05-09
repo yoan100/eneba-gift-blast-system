@@ -1,17 +1,13 @@
 
 # Deployment Guide for InfinityFree Hosting
 
-Follow these steps to deploy this React application to InfinityFree:
+Follow these steps to deploy this static HTML page to InfinityFree:
 
-## Step 1: Build the Project
+## Step 1: Prepare Your Files
 
-First, build the project to generate static files:
-
-```bash
-npm run build
-```
-
-This will create a `dist` directory with all the static files needed for your website.
+You need just two files for deployment:
+1. `index.html` - Contains all HTML, CSS, and JavaScript for the application
+2. `.htaccess` - Ensures proper routing and configuration for your site
 
 ## Step 2: Set Up Your InfinityFree Account
 
@@ -20,31 +16,35 @@ This will create a `dist` directory with all the static files needed for your we
 
 ## Step 3: Upload Files
 
-1. Access the File Manager in your InfinityFree control panel or use an FTP client
+1. Access the File Manager in your InfinityFree control panel or use FTP
 2. Navigate to the `htdocs` or `public_html` directory
-3. Upload ALL files from your project's `dist` directory to this folder
-4. Make sure to include the `.htaccess` file from the `dist` directory
+3. Upload both files:
+   - `index.html` 
+   - `.htaccess`
+4. Make sure the `.htaccess` file is uploaded correctly (it's hidden by default)
 
-## Step 4: Configure Your Website
+## Step 4: Verify File Permissions
 
-1. Ensure that the `.htaccess` file was properly uploaded
-2. If you're using a custom domain, make sure it's properly configured in the InfinityFree control panel
+1. Check that `index.html` has permissions of 644 (readable by everyone)
+2. Check that `.htaccess` has permissions of 644 as well
+3. If needed, adjust permissions using the File Manager or FTP client
 
 ## Step 5: Test Your Website
 
-1. Visit your website URL to make sure everything is working properly
-2. Test all features to ensure they function as expected
+1. Visit your website URL to ensure everything loads properly
+2. Test all features including the verification process
+3. Check the browser console for any JavaScript errors
 
 ## Troubleshooting
 
-If you encounter any issues:
+If you encounter issues:
 
-1. Check the `.htaccess` file is present and has the correct permissions (usually 644)
-2. Ensure all files were uploaded, including the `index.html` file
-3. Clear your browser cache and try accessing the website again
+1. **Blank page or 500 errors**: Check that `.htaccess` is uploaded and has correct permissions
+2. **Missing styles or functionality**: Ensure `index.html` contains all necessary JavaScript and CSS
+3. **CORS errors**: InfinityFree might block some external API calls; check browser console for details
+4. **Page not found errors**: Make sure your `.htaccess` file is configured correctly
 
-## Important Notes for InfinityFree
-
-- InfinityFree uses Apache servers, so the included `.htaccess` file is essential
-- If you're using API requests, ensure they're secure (HTTPS) as InfinityFree provides SSL
-- Remember that InfinityFree has certain limitations on bandwidth and storage
+Remember that InfinityFree has limitations:
+- Limited PHP processing (not used in this project)
+- Limited bandwidth and storage
+- Some API restrictions (Discord webhooks might be blocked)
